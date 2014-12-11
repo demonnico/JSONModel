@@ -313,13 +313,21 @@ static NSString* requestContentType = nil;
 			if(responseData.length > 0)
 			{
 				//convert to an object
-				jsonObject = [NSJSONSerialization JSONObjectWithData:responseData options:kNilOptions error:&error];
+                NSString * string =
+                [[NSString alloc] initWithData:responseData encoding:NSUTF8StringEncoding];
+                string =  [string stringByReplacingOccurrencesOfString:@"\\\"" withString:@"'"];
+                string =  [string stringByReplacingOccurrencesOfString:@"\n" withString:@""];
+                responseData = [string dataUsingEncoding:NSUTF8StringEncoding];
+				jsonObject = [NSJSONSerialization JSONObjectWithData:responseData
+                                                             options:NSJSONReadingAllowFragments
+                                                               error:&error];
 			}
         }
         //step 4.5: cover an edge case in which meaningful content is return along an error HTTP status code
         else if (error && responseData && jsonObject==nil) {
             //try to get the JSON object, while preserving the origianl error object
-            jsonObject = [NSJSONSerialization JSONObjectWithData:responseData options:kNilOptions error:nil];
+            jsonObject = [NSJSONSerialization JSONObjectWithData:responseData
+                                                         options:NSJSONReadingAllowFragments error:nil];
         }
         
         //step 5: invoke the complete block
@@ -357,7 +365,6 @@ static NSString* requestContentType = nil;
                    orBodyString:nil completion:^(id json, JSONModelError* e) {
                        if (completeBlock) completeBlock(json, e);
                    }];
-
 }
 
 +(void)postJSONFromURLWithString:(NSString*)urlString bodyString:(NSString*)bodyString completion:(JSONObjectBlock)completeBlock
